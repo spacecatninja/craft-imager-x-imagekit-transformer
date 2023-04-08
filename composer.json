@@ -1,0 +1,48 @@
+{
+    "name": "spacecatninja/imager-x-imagekit-transformer",
+    "description": "ImageKit Transformer for Imager X",
+    "type": "craft-plugin",
+    "version": "1.0.0",
+    "license": "MIT",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "image",
+        "responsive",
+        "transform",
+        "srcset",
+        "picture"
+    ],
+    "support": {
+        "docs": "https://github.com/spacecatninja/craft-imager-x-imagekit-transformer/blob/master/README.md",
+        "issues": "https://github.com/spacecatninja/craft-imager-x-imagekit-transformer/issues"
+    },
+    "authors": [
+        {
+            "name": "SPACECATNINJA",
+            "homepage": "https://www.spacecat.ninja"
+        }
+    ],
+    "require": {
+        "php": "^8.0",        
+        "craftcms/cms": "^4.0.0",
+        "imagekit/imagekit": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+          "spacecatninja\\imagekittransformer\\": "src/"
+        }
+    },
+    "extra": {
+        "name": "Imager X ImageKit Transformer",
+        "handle": "imager-x-imagekit-transformer",
+        "schemaVersion": "1.0.0",
+        "hasCpSettings": false,
+        "hasCpSection": false,
+        "changelogUrl": "https://raw.githubusercontent.com/spacecatninja/craft-imager-x-imagekit-transformer/master/CHANGELOG.md",
+        "components": {},
+        "class": "spacecatninja\\imagekittransformer\\ImagekitTransformer"
+    }
+}
