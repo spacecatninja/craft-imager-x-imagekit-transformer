@@ -56,12 +56,12 @@ class ImagekitHelpers
             $path = $image->getPath();
         }
         
-        if (!empty($config->addPath)) {
-            if (\is_string($config->addPath) && $config->addPath !== '') {
-                $path = implode('/', [$config->addPath, $path]);
-            } elseif (is_array($config->addPath)) {
-                if (isset($config->addPath[$volume->handle])) {
-                    $path = implode('/', [$config->addPath[$volume->handle], $path]);
+        if (!empty($profile->addPath)) {
+            if (\is_string($profile->addPath) && $profile->addPath !== '') {
+                $path = implode('/', [$profile->addPath, $path]);
+            } elseif (is_array($profile->addPath)) {
+                if (isset($profile->addPath[$volume->handle])) {
+                    $path = implode('/', [$profile->addPath[$volume->handle], $path]);
                 }
             }
         }
