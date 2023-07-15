@@ -1,8 +1,8 @@
 {
     "name": "spacecatninja/imager-x-imagekit-transformer",
-    "description": "ImageKit Transformer for Imager X",
+    "description": "ImageKit transformer for Imager X",
     "type": "craft-plugin",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "license": "MIT",
     "keywords": [
         "craft",
