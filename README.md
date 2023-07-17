@@ -37,7 +37,6 @@ All the basic transform parameters are supported, with the following exceptions:
 - Focal points are translated to focus anchor points (ie `top`, `left`, `center`, etc).  
 – Watermarks are not translated automatically from Imager syntax to ImageKit's, but you can still add watermarks by manually passing them through the `transformerParams` object (see below).   
 - No effects are currently converted automatically.    
-- Purging has not yet been implemented.
 
 To pass additional options directly to ImageKit, you can use the `transformerParams` transform parameter and pass them in using an `options` object. Example:
 
@@ -141,7 +140,6 @@ Prepends a path to the asset's path. Can be useful if you have
 several volumes that you want to serve with one ImageKit source. If this setting is an array, the key 
 should be the volume handle, and the value the path to add.
 
-
 ### defaultProfile [string]
 Default: `''`  
 Sets the default profile to use (see `profiles`). You can override profile at the transform level by setting it through the `transformParams` transform parameter. Example:
@@ -155,7 +153,11 @@ Sets the default profile to use (see `profiles`). You can override profile at th
 
 ### defaultParams [array]
 Default: `[]`  
+Default params to pass to all transforms.
 
+### purgeEnabled [bool]
+Default: `true`  
+Toggles automatic purging on/off.
 
 Price, license and support
 ---
