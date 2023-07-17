@@ -20,4 +20,5 @@ class Settings extends Model
     public string $defaultProfile = '';
     public array $profiles = [];
     public array $defaultParams = [];
+    public bool $purgeEnabled = true;
 }

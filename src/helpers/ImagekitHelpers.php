@@ -24,11 +24,11 @@ class ImagekitHelpers
     public static function getProfile(string $name): ?ImagekitProfile
     {
         $settings = ImagekitTransformer::$plugin->getSettings();
-        
+
         if ($settings && isset($settings->profiles[$name])) {
             return new ImagekitProfile($settings->profiles[$name]);
         }
-        
+
         return null;
     }
 
@@ -37,11 +37,11 @@ class ImagekitHelpers
         if (\is_string($image)) { // if $image is a string, just pass it to builder, we have to assume the user knows what he's doing (sry) :)
             return $image;
         }
-        
+
         if ($profile->isWebProxy) {
             return $settings->stripUrlQueryString ? UrlHelper::stripQueryString($image->url) : $image->url;
         }
-            
+
         try {
             $volume = $image->getVolume();
             $fs = $image->getVolume()->getFs();
@@ -55,7 +55,7 @@ class ImagekitHelpers
         } else {
             $path = $image->getPath();
         }
-        
+
         if (!empty($profile->addPath)) {
             if (\is_string($profile->addPath) && $profile->addPath !== '') {
                 $path = implode('/', [$profile->addPath, $path]);
@@ -65,7 +65,7 @@ class ImagekitHelpers
                 }
             }
         }
-        
+
         $path = FileHelper::normalizePath($path);
 
         //always use forward slashes for imgix
@@ -74,4 +74,51 @@ class ImagekitHelpers
         return $path;
     }
 
+    public static function purgeAsset(Asset $asset): void
+    {
+        /** @var Settings $settings */
+        $settings = ImagekitTransformer::getInstance()?->getSettings();
+
+        if (!$settings) {
+            return;
+        }
+
+        $publicKey = $settings->publicKey;
+        $privateKey = $settings->privateKey;
+
+        if (empty($publicKey) || empty($privateKey)) {
+            return;
+        }
+
+        $profiles = $settings->profiles;
+
+        foreach ($profiles as $profile) {
+            $profileModel = new ImagekitProfile($profile);
+
+            if ($profileModel->isWebProxy) {
+                continue;
+            }
+
+            $imageKit = new \ImageKit\ImageKit(
+                $settings->publicKey,
+                $settings->privateKey,
+                $profileModel->urlEndpoint
+            );
+
+            try {
+                $path = self::getFilePath($asset, $profileModel, $settings);
+            } catch (ImagerException $imagerException) {
+                \Craft::error('An error occured when trying to get file path to purge: '.$imagerException->getMessage(), __METHOD__);
+            }
+
+            $response = $imageKit->purgeCache(rtrim($profileModel->urlEndpoint, '/').'/'.$path);
+
+            if ($response && $response->error && $response->error->message) {
+                \Craft::error('An error occured when trying to purge asset for ImageKit: '.print_r([
+                        'path' => $path,
+                        'response' => $response
+                    ], true), __METHOD__);
+            }
+        }
+    }
 }
