@@ -1,5 +1,10 @@
 # Imager X ImageKit transformer Changelog
 
+## 1.1.0
+
+### Added
+- Added purging (fixes #3)
+
 ## 1.0.1
 
 ### Fixed
