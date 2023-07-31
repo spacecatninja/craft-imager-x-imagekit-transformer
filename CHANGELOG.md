@@ -1,5 +1,10 @@
 # Imager X ImageKit transformer Changelog
 
+## 1.1.1
+
+### Fixed
+- Fixed various issues related to converting transform parameters (fixes #4)
+
 ## 1.1.0
 
 ### Added

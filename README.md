@@ -159,6 +159,7 @@ Default params to pass to all transforms.
 Default: `true`  
 Toggles automatic purging on/off.
 
+
 Price, license and support
 ---
 The plugin is released under the MIT license. It requires Imager X, which is a commercial 
