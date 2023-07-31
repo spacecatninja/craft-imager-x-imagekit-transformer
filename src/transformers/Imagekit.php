@@ -84,9 +84,14 @@ class Imagekit extends Component implements TransformerInterface
         
         $r = [];
 
-        // Merge in default values
-        if ($profile->defaultParams) {
-            $transform = array_merge($profile->defaultParams, $transform);
+        // Merge in default values from settings
+        if (!empty($settings->defaultParams)) {
+            $r = array_merge($r, $settings->defaultParams);
+        }
+        
+        // Merge in default values from profile
+        if (!empty($profile->defaultParams)) {
+            $r = array_merge($r, $profile->defaultParams);
         }
         
         // Set width and height in the return object
@@ -98,8 +103,13 @@ class Imagekit extends Component implements TransformerInterface
             $r['height'] = $transform['height'];
         }
 
+        // set format
+        if (isset($transform['format'])) {
+            $r['format'] = $transform['format'];
+        }
+
         // Set quality 
-        if (!isset($transform['quality'])) {
+        if (!isset($transformerParams['quality']) && !isset($r['quality'])) {
             if (isset($r['format'])) {
                 $r['quality'] = $this->getQualityFromExtension($r['format'], $transform);
             } else {
@@ -121,7 +131,7 @@ class Imagekit extends Component implements TransformerInterface
         unset($transform['jpegQuality'], $transform['pngCompressionLevel'], $transform['webpQuality']);
         
         // Deal with resize mode, called crop mode/crop (cm/c) in Imagekit
-        if (!isset($transform['cropMode'], $transform['crop'])) {
+        if (!isset($r['cropMode']) && !isset($r['crop']) && !isset($transformerParams['cropMode']) && !isset($transformerParams['crop'])) {
             if (isset($transform['mode'])) {
                 $mode = $transform['mode'];
 
@@ -157,17 +167,13 @@ class Imagekit extends Component implements TransformerInterface
         }
         
         // If fit is crop, and crop isn't specified, use position as focal point.
-        if (isset($r['crop']) && $r['crop'] === 'maintain_ratio' && (!isset($transformerParams['focus']))) {
+        if (isset($r['crop']) && $r['crop'] === 'maintain_ratio' && (!isset($transformerParams['focus']) && !isset($r['focus']))) {
             $position = $config->getSetting('position', $transform);
             $r['focus'] = $this->translatePosition($position);
             unset($transform['position']);
         }
         
-        // Handle padding
-        if (isset($transform['pad'])) {
-            $bgColor = $config->getSetting('bgColor', $transform);
-            $r['background'] = $transform['pad'] . '-' . $bgColor;
-        }
+        // Note: Padding is not supported by imagekit, removed. 
         
         // Add any explicitly set params
         foreach ($transformerParams as $key => $val) {
