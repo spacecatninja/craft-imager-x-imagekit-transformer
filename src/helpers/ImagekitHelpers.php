@@ -44,14 +44,14 @@ class ImagekitHelpers
 
         try {
             $volume = $image->getVolume();
-            $fs = $image->getVolume()->getFs();
+            $fs = $volume->getFs();
         } catch (InvalidConfigException $invalidConfigException) {
             \Craft::error($invalidConfigException->getMessage(), __METHOD__);
             throw new ImagerException($invalidConfigException->getMessage(), $invalidConfigException->getCode(), $invalidConfigException);
         }
 
-        if (($profile->useCloudSourcePath) && (property_exists($fs, 'subfolder') && $fs->subfolder !== null) && $fs::class !== Local::class) {
-            $path = implode('/', [App::parseEnv($fs->subfolder), $image->getPath()]);
+        if ($profile->useCloudSourcePath && property_exists($fs, 'subfolder') && $fs::class !== Local::class) {
+            $path = implode('/', [App::parseEnv($fs->subfolder), App::parseEnv($volume->getSubpath()), $image->getPath()]);
         } else {
             $path = $image->getPath();
         }
