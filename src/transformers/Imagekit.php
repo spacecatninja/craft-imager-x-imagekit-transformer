@@ -74,7 +74,7 @@ class Imagekit extends Component implements TransformerInterface
             'expireSeconds' => $settings->signedUrlsExpireSeconds
         ]);
 
-        return new ImagekitTransformedImageModel($url, $image, $params);
+        return new ImagekitTransformedImageModel($url, $image, $params, $profile);
     }
     
     private function createParams(array $transform, Asset|string $image, ImagekitProfile $profile, Settings $settings): array
