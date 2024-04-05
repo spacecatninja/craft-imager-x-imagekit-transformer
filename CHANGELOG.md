@@ -1,5 +1,10 @@
 # Imager X ImageKit transformer Changelog
 
+## 1.1.2
+
+### Fixed
+- Fixed an issue where profile was not passed to the `ImagekitTransformedImageModel` (fixes #5)
+
 ## 1.1.1
 
 ### Fixed
