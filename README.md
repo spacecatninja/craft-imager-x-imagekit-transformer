@@ -5,13 +5,15 @@ Also, an example of [how to make a custom transformer for Imager X](https://imag
 
 ## Requirements
 
-This plugin requires Craft CMS 5.0.0-beta.1 or later, [Imager X 5.0.0-beta.1](https://github.com/spacecatninja/craft-imager-x/) or later,
-and an account at [ImageKit](https://imagekit.io/).
+This plugin requires Craft CMS 6.0.0 or later, [Imager X 7.0.0](https://github.com/spacecatninja/craft-imager-x/) or later
+(the Pro edition, like all custom transformers), PHP 8.5 or later, and an account at [ImageKit](https://imagekit.io/).
+
+Version 2.x of this plugin supports Craft CMS 5 and Imager X 5 and 6. See [UPGRADE.md](UPGRADE.md) when moving to Craft 6.
  
 ## Usage
 
 Install and configure this transformer as described below. Then, in your [Imager X config](https://imager-x.spacecat.ninja/configuration.html), 
-set the transformer to `imagekit`, ie:
+`config/craft/imager-x.php`, set the transformer to `imagekit`, ie:
 
 ```
 'transformer' => 'imagekit',
@@ -37,8 +39,14 @@ All the basic transform parameters are supported, with the following exceptions:
 - Focal points are translated to focus anchor points (ie `top`, `left`, `center`, etc).  
 – Watermarks are not translated automatically from Imager syntax to ImageKit's, but you can still add watermarks by manually passing them through the `transformerParams` object (see below).   
 - No effects are currently converted automatically.    
+- ImageKit always enlarges images in its `maintain_ratio` and `force` crop strategies, which the `crop` and `stretch`
+  modes use. When `allowUpscale` is off, the transformer clamps the size of assets to the source instead: crops keep
+  their aspect ratio, and `stretch` clamps each side on its own, like Imager does. Images transformed from a path or
+  URL aren't clamped.
+- ImageKit refuses to make images larger than its resolution limit, 25 megapixels by default, and returns a 400 with an
+  `ELIMIT` error.
 
-To pass additional options directly to ImageKit, you can use the `transformerParams` transform parameter and pass them in using an `options` object. Example:
+To pass additional options directly to ImageKit, you can use the `transformerParams` transform parameter. Example:
 
 ```
 {% set transforms = craft.imagerx.transformImage(asset, 
@@ -56,13 +64,29 @@ Refer to the [ImageKit PHP SDK](https://github.com/imagekit-developer/imagekit-p
 To install the plugin, follow these instructions:
 
 1. Install with composer via `composer require spacecatninja/imager-x-imagekit-transformer` from your project directory.
-2. Install the plugin in the Craft Control Panel under Settings > Plugins, or from the command line via `./craft plugin/install imager-x-imagekit-transformer`.
+2. Install the plugin in the Craft Control Panel under Settings > Plugins, or from the command line via `php artisan craft:plugin:install imager-x-imagekit-transformer`.
 
 
 ## Configuration
 
-You can configure the transformer by creating a file in your config folder called
-`imager-x-imagekit-transformer.php`, and override settings as needed.
+You can configure the transformer by creating a file called `imager-x-imagekit-transformer.php` in your 
+`config/craft/` folder, and override settings as needed. It's a plain Laravel config file, so use `env()` for 
+the keys and other environment-specific values.
+
+```php
+<?php
+
+return [
+    'publicKey' => env('IMAGEKIT_PUBLIC_KEY', ''),
+    'privateKey' => env('IMAGEKIT_PRIVATE_KEY', ''),
+    'defaultProfile' => 'default',
+    'profiles' => [
+        'default' => [
+            'urlEndpoint' => 'https://ik.imagekit.io/myurlendpoint',
+        ],
+    ],
+];
+```
 
 ### publicKey [string]
 Default: `''`  
@@ -129,10 +153,10 @@ Default params to be passed to every transform.
 
 #### useCloudSourcePath [bool]
 Default: `false`       
-If enabled, Imager will prepend the Craft file system path to the asset path, before adding it to the 
-ImageKit URL. This makes it possible to have one ImageKit source pulling images from many Craft file systems 
-when they are for instance on the same S3 bucket, but in different subfolder. This only works on file systems that 
-implements a path setting (AWS S3 and GCS does, local volumes does not).
+If enabled, Imager will prepend the volume's path in its cloud storage to the asset path, before adding it to the 
+ImageKit URL. The path is the `root` of the volume's filesystem disk, followed by the volume's subpath. This makes it 
+possible to have one ImageKit source pulling images from many Craft volumes when they are for instance on the same S3 
+bucket, but in different folders. This only applies to cloud disks (for instance S3 and GCS), not local disks.
 
 #### addPath [string|array]
 Default: `[]`       
@@ -142,12 +166,13 @@ should be the volume handle, and the value the path to add.
 
 ### defaultProfile [string]
 Default: `''`  
-Sets the default profile to use (see `profiles`). You can override profile at the transform level by setting it through the `transformParams` transform parameter. Example:
+Sets the default profile to use (see `profiles`). You can override the profile at the template level by setting it through `transformerConfig`. Example:
 
 ```
 {% set transforms = craft.imagerx.transformImage(asset, 
     [{width: 800}, {width: 2000}], 
-    { transformerParams: { profile: 'myotherprofile' } }
+    null,
+    { transformerConfig: { profile: 'myotherprofile' } }
 ) %}
 ```
 
@@ -157,7 +182,8 @@ Default params to pass to all transforms.
 
 ### purgeEnabled [bool]
 Default: `true`  
-Toggles automatic purging on/off.
+Toggles automatic purging on/off. When it's on, and `publicKey` and `privateKey` are set, an asset is purged from
+every profile that isn't a web proxy when its file is replaced in Craft.
 
 
 Price, license and support
