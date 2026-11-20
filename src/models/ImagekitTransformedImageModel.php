@@ -30,29 +30,32 @@ class ImagekitTransformedImageModel extends BaseTransformedImageModel implements
         }
         
         $crop = $transform['crop'] ?? 'maintain_ratio';
-        
+        $cropMode = $transform['cropMode'] ?? null;
+
         if (isset($transform['width'], $transform['height'])) {
             $this->width = (int)$transform['width'];
             $this->height = (int)$transform['height'];
 
-            if ($source !== null && ($crop === 'at_max' || $crop === 'at_max_enlarge')) {
-                [$sourceWidth, $sourceHeight] = $this->getSourceImageDimensions($source);
-                
-                // todo: enforce upscale limit if crop is at_max 
+            [$sourceWidth, $sourceHeight] = $source !== null ? $this->getSourceImageDimensions($source) : [0, 0];
+            $transformW = (int)$transform['width'];
+            $transformH = (int)$transform['height'];
 
-                $transformW = (int)$transform['width'];
-                $transformH = (int)$transform['height'];
-
-                if ($sourceWidth !== 0 && $sourceHeight !== 0) {
+            if ($sourceWidth !== 0 && $sourceHeight !== 0) {
+                if ($crop === 'at_max' || $crop === 'at_max_enlarge') {
+                    // The image is fitted inside the size, and only enlarged with at_max_enlarge
                     if ($sourceWidth / $sourceHeight > $transformW / $transformH) {
-                        $useW = min($transformW, $sourceWidth);
+                        $useW = $crop === 'at_max_enlarge' ? $transformW : min($transformW, $sourceWidth);
                         $this->width = $useW;
                         $this->height = round($useW * ($sourceHeight / $sourceWidth));
                     } else {
-                        $useH = min($transformH, $sourceHeight);
+                        $useH = $crop === 'at_max_enlarge' ? $transformH : min($transformH, $sourceHeight);
                         $this->width = round($useH * ($sourceWidth / $sourceHeight));
                         $this->height = $useH;
                     }
+                } elseif ($cropMode === 'extract') {
+                    // An extracted area is never larger than the source
+                    $this->width = min($transformW, $sourceWidth);
+                    $this->height = min($transformH, $sourceHeight);
                 }
             }
         } else if (isset($transform['width']) || isset($transform['height'])) {
@@ -60,6 +63,11 @@ class ImagekitTransformedImageModel extends BaseTransformedImageModel implements
 
             if ($sourceWidth !== 0 && $sourceHeight !== 0) {
                 [$w, $h] = $this->calculateTargetSize($transform, $sourceWidth, $sourceHeight);
+
+                // at_max never enlarges the image
+                if ($crop === 'at_max' && ($w > $sourceWidth || $h > $sourceHeight)) {
+                    [$w, $h] = [$sourceWidth, $sourceHeight];
+                }
 
                 $this->width = $w;
                 $this->height = $h;

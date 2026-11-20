@@ -81,6 +81,7 @@ class Imagekit extends Component implements TransformerInterface
     {
         $config = ImagerService::getConfig();
         $transformerParams = $transform['transformerParams'] ?? [];
+        $allowUpscale = (bool)$config->getSetting('allowUpscale', $transform);
         
         $r = [];
 
@@ -137,7 +138,7 @@ class Imagekit extends Component implements TransformerInterface
 
                 switch ($mode) {
                     case 'fit':
-                        $r['crop'] = $config->allowUpscale ? 'at_max_enlarge' : 'at_max';
+                        $r['crop'] = $allowUpscale ? 'at_max_enlarge' : 'at_max';
                         break;
                     case 'stretch':
                         $r['crop'] = 'force';
@@ -161,7 +162,7 @@ class Imagekit extends Component implements TransformerInterface
                 if (isset($r['width'], $r['height'])) {
                     $r['crop'] = 'maintain_ratio';
                 } else {
-                    $r['crop'] = $config->allowUpscale ? 'at_max_enlarge' : 'at_max';
+                    $r['crop'] = $allowUpscale ? 'at_max_enlarge' : 'at_max';
                 }
             }
         }
@@ -173,6 +174,34 @@ class Imagekit extends Component implements TransformerInterface
             unset($transform['position']);
         }
         
+        // ImageKit always enlarges images in the maintain_ratio and force crop strategies, so without allowUpscale
+        // the size of an asset is clamped to the source, like Imager does: crops keep their aspect ratio, and
+        // stretch clamps each side on its own.
+        if (!$allowUpscale && $image instanceof Asset && isset($r['width'], $r['height'], $r['crop'])) {
+            $sourceWidth = (int)$image->getWidth();
+            $sourceHeight = (int)$image->getHeight();
+            $width = (int)$r['width'];
+            $height = (int)$r['height'];
+
+            if ($sourceWidth && $sourceHeight && ($width > $sourceWidth || $height > $sourceHeight)) {
+                if ($r['crop'] === 'force') {
+                    $r['width'] = min($width, $sourceWidth);
+                    $r['height'] = min($height, $sourceHeight);
+                } elseif ($r['crop'] === 'maintain_ratio') {
+                    $sourceRatio = $sourceHeight / $sourceWidth;
+                    $transformRatio = $height / $width;
+
+                    if ($sourceRatio > $transformRatio) {
+                        $r['width'] = $sourceWidth;
+                        $r['height'] = (int)ceil($sourceWidth * $transformRatio);
+                    } else {
+                        $r['height'] = $sourceHeight;
+                        $r['width'] = (int)ceil($sourceHeight / $transformRatio);
+                    }
+                }
+            }
+        }
+
         // Note: Padding is not supported by imagekit, removed. 
         
         // Add any explicitly set params
