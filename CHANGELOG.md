@@ -1,6 +1,6 @@
 # Imager X ImageKit transformer Changelog
 
-## 2.0.3 - Unreleased
+## 2.0.3 - 2026-11-20
 
 ### Fixed
 - Fixed a division by zero error when transforming an image whose size couldn't be read, like an external URL with `getExternalImageDimensions` off, with only a `width` or `height`.
