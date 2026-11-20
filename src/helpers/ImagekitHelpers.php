@@ -12,6 +12,7 @@ use craft\elements\Asset;
 use craft\fs\Local;
 use craft\helpers\App;
 use craft\helpers\FileHelper;
+use craft\helpers\UrlHelper;
 use spacecatninja\imagekittransformer\ImagekitTransformer;
 use spacecatninja\imagekittransformer\models\ImagekitProfile;
 use spacecatninja\imagekittransformer\models\Settings;
@@ -39,7 +40,9 @@ class ImagekitHelpers
         }
 
         if ($profile->isWebProxy) {
-            return $settings->stripUrlQueryString ? UrlHelper::stripQueryString($image->url) : $image->url;
+            $url = $image->getUrl() ?? '';
+
+            return $config->stripUrlQueryString ? UrlHelper::stripQueryString($url) : $url;
         }
 
         try {
@@ -109,6 +112,7 @@ class ImagekitHelpers
                 $path = self::getFilePath($asset, $profileModel, $settings);
             } catch (ImagerException $imagerException) {
                 \Craft::error('An error occured when trying to get file path to purge: '.$imagerException->getMessage(), __METHOD__);
+                continue;
             }
 
             $response = $imageKit->purgeCache(rtrim($profileModel->urlEndpoint, '/').'/'.$path);
