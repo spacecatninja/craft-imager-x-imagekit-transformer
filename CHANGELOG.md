@@ -1,6 +1,6 @@
 # Imager X ImageKit transformer Changelog
 
-## 2.0.2
+## 2.0.2 - 2026-11-20
 
 ### Fixed
 - Fixed a fatal error that occured when transforming with a profile that had `isWebProxy` enabled.
