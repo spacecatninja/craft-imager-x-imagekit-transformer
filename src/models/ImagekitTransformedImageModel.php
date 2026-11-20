@@ -56,12 +56,17 @@ class ImagekitTransformedImageModel extends BaseTransformedImageModel implements
                 }
             }
         } else if (isset($transform['width']) || isset($transform['height'])) {
-            if ($source !== null && $transform !== null) {
-                [$sourceWidth, $sourceHeight] = $this->getSourceImageDimensions($source);
+            [$sourceWidth, $sourceHeight] = $source !== null ? $this->getSourceImageDimensions($source) : [0, 0];
+
+            if ($sourceWidth !== 0 && $sourceHeight !== 0) {
                 [$w, $h] = $this->calculateTargetSize($transform, $sourceWidth, $sourceHeight);
 
                 $this->width = $w;
                 $this->height = $h;
+            } else {
+                // Without the source's size, only the size that was asked for is known
+                $this->width = (int)($transform['width'] ?? 0);
+                $this->height = (int)($transform['height'] ?? 0);
             }
         } else {
             // Neither is set, image is not resized. Just get dimensions and return.
@@ -78,7 +83,7 @@ class ImagekitTransformedImageModel extends BaseTransformedImageModel implements
     protected function getSourceImageDimensions($source): array
     {
         if ($source instanceof Asset) {
-            return [$source->getWidth(), $source->getHeight()];
+            return [(int)$source->getWidth(), (int)$source->getHeight()];
         }
 
         if ($this->profileConfig !== null && $this->profileConfig->getExternalImageDimensions) {
@@ -88,7 +93,7 @@ class ImagekitTransformedImageModel extends BaseTransformedImageModel implements
     
                 $sourceImageSize = ImagerHelpers::getSourceImageSize($sourceModel);
     
-                return [$sourceImageSize[0], $sourceImageSize[1]];
+                return [(int)$sourceImageSize[0], (int)$sourceImageSize[1]];
             } catch (\Throwable) {
                 \Craft::error('Could not get dimensions of external image', __METHOD__);
             }
