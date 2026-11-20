@@ -6,17 +6,17 @@
  * @copyright Copyright (c) 2023 André Elvan
  */
 
-namespace spacecatninja\imagekittransformer\transformers;
+namespace SpaceCatNinja\ImagekitTransformer\Transformers;
 
 use Craft;
 use craft\base\Component;
 use craft\elements\Asset;
 
-use spacecatninja\imagekittransformer\helpers\ImagekitHelpers;
-use spacecatninja\imagekittransformer\ImagekitTransformer;
-use spacecatninja\imagekittransformer\models\ImagekitProfile;
-use spacecatninja\imagekittransformer\models\Settings;
-use spacecatninja\imagekittransformer\models\ImagekitTransformedImageModel;
+use SpaceCatNinja\ImagekitTransformer\Support\ImagekitHelpers;
+use SpaceCatNinja\ImagekitTransformer\ImagekitTransformer;
+use SpaceCatNinja\ImagekitTransformer\Data\ImagekitProfile;
+use SpaceCatNinja\ImagekitTransformer\Settings;
+use SpaceCatNinja\ImagekitTransformer\Data\ImagekitTransformedImageModel;
 
 use spacecatninja\imagerx\models\ConfigModel;
 use spacecatninja\imagerx\services\ImagerService;

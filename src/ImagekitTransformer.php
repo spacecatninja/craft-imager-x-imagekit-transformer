@@ -7,16 +7,16 @@
  * @copyright Copyright (c) 2023 André Elvan
  */
 
-namespace spacecatninja\imagekittransformer;
+namespace SpaceCatNinja\ImagekitTransformer;
 
 use craft\base\Model;
 use craft\base\Plugin;
 
 use craft\events\ReplaceAssetEvent;
 use craft\services\Assets;
-use spacecatninja\imagekittransformer\helpers\ImagekitHelpers;
-use spacecatninja\imagekittransformer\models\Settings;
-use spacecatninja\imagekittransformer\transformers\Imagekit;
+use SpaceCatNinja\ImagekitTransformer\Support\ImagekitHelpers;
+use SpaceCatNinja\ImagekitTransformer\Settings;
+use SpaceCatNinja\ImagekitTransformer\Transformers\Imagekit;
 use yii\base\Event;
 
 class ImagekitTransformer extends Plugin

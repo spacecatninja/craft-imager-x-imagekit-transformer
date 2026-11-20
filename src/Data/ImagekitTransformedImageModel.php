@@ -6,7 +6,7 @@
  * @copyright Copyright (c) 2023 André Elvan
  */
 
-namespace spacecatninja\imagekittransformer\models;
+namespace SpaceCatNinja\ImagekitTransformer\Data;
 
 use craft\elements\Asset;
 use spacecatninja\imagerx\helpers\ImagerHelpers;

@@ -26,13 +26,13 @@
         }
     ],
     "require": {
-        "php": "^8.2",        
+        "php": "^8.2",
         "craftcms/cms": "^5.0.0-beta.1",
         "imagekit/imagekit": "^4.0"
     },
     "autoload": {
         "psr-4": {
-          "spacecatninja\\imagekittransformer\\": "src/"
+            "SpaceCatNinja\\ImagekitTransformer\\": "src/"
         }
     },
     "extra": {
@@ -43,6 +43,6 @@
         "hasCpSection": false,
         "changelogUrl": "https://raw.githubusercontent.com/spacecatninja/craft-imager-x-imagekit-transformer/master/CHANGELOG.md",
         "components": {},
-        "class": "spacecatninja\\imagekittransformer\\ImagekitTransformer"
+        "class": "SpaceCatNinja\\ImagekitTransformer\\ImagekitTransformer"
     }
 }

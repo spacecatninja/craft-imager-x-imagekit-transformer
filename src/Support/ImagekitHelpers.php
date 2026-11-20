@@ -6,16 +6,16 @@
  * @copyright Copyright (c) 2023 André Elvan
  */
 
-namespace spacecatninja\imagekittransformer\helpers;
+namespace SpaceCatNinja\ImagekitTransformer\Support;
 
 use craft\elements\Asset;
 use craft\fs\Local;
 use craft\helpers\App;
 use craft\helpers\FileHelper;
 use craft\helpers\UrlHelper;
-use spacecatninja\imagekittransformer\ImagekitTransformer;
-use spacecatninja\imagekittransformer\models\ImagekitProfile;
-use spacecatninja\imagekittransformer\models\Settings;
+use SpaceCatNinja\ImagekitTransformer\ImagekitTransformer;
+use SpaceCatNinja\ImagekitTransformer\Data\ImagekitProfile;
+use SpaceCatNinja\ImagekitTransformer\Settings;
 use spacecatninja\imagerx\exceptions\ImagerException;
 use yii\base\InvalidConfigException;
 
