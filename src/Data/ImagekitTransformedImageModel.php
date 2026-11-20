@@ -8,21 +8,23 @@
 
 namespace SpaceCatNinja\ImagekitTransformer\Data;
 
-use craft\elements\Asset;
-use spacecatninja\imagerx\helpers\ImagerHelpers;
-use spacecatninja\imagerx\models\BaseTransformedImageModel;
-use spacecatninja\imagerx\models\LocalSourceImageModel;
-use spacecatninja\imagerx\models\TransformedImageInterface;
+use CraftCms\Cms\Asset\Elements\Asset;
+use Illuminate\Support\Facades\Log;
+use SpaceCatNinja\ImagerX\Data\BaseTransformedImageModel;
+use SpaceCatNinja\ImagerX\Data\LocalSourceImageModel;
+use SpaceCatNinja\ImagerX\Data\TransformedImageInterface;
+use SpaceCatNinja\ImagerX\Support\ImagerHelpers;
 
 class ImagekitTransformedImageModel extends BaseTransformedImageModel implements TransformedImageInterface
 {
     private ImagekitProfile|null $profileConfig;
 
     /**
-     * ImgixTransformedImageModel constructor.
+     * ImagekitTransformedImageModel constructor.
      */
-    public function __construct(string $imageUrl = null, Asset|string $source = null, array $transform = [], ?ImagekitProfile $profileConfig = null)
+    public function __construct(?string $imageUrl = null, Asset|string|null $source = null, array $transform = [], ?ImagekitProfile $profileConfig = null)
     {
+        $this->source = $source;
         $this->profileConfig = $profileConfig;
         
         if ($imageUrl !== null) {
@@ -90,7 +92,7 @@ class ImagekitTransformedImageModel extends BaseTransformedImageModel implements
     
                 return [$sourceImageSize[0], $sourceImageSize[1]];
             } catch (\Throwable) {
-                \Craft::error('Could not get dimensions of external image', __METHOD__);
+                Log::error('Could not get dimensions of external image');
             }
         }
 

@@ -3,14 +3,17 @@
  * ImageKit transformer for Imager X
  *
  * @link      https://www.spacecat.ninja
- * @copyright Copyright (c) 2023 André Elvan
+ * @copyright Copyright (c) 2026 André Elvan
  */
 
 namespace SpaceCatNinja\ImagekitTransformer\Data;
 
-use craft\base\Model;
+use CraftCms\Cms\Component\Component;
 
-class ImagekitProfile extends Model
+/**
+ * The config of one ImageKit profile, from the `profiles` setting.
+ */
+class ImagekitProfile extends Component
 {
     public string $urlEndpoint = '';
     public bool $isWebProxy = false;

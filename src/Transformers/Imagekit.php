@@ -8,22 +8,17 @@
 
 namespace SpaceCatNinja\ImagekitTransformer\Transformers;
 
-use Craft;
-use craft\base\Component;
-use craft\elements\Asset;
-
-use SpaceCatNinja\ImagekitTransformer\Support\ImagekitHelpers;
-use SpaceCatNinja\ImagekitTransformer\ImagekitTransformer;
+use CraftCms\Cms\Asset\Elements\Asset;
+use Illuminate\Support\Facades\Log;
 use SpaceCatNinja\ImagekitTransformer\Data\ImagekitProfile;
-use SpaceCatNinja\ImagekitTransformer\Settings;
 use SpaceCatNinja\ImagekitTransformer\Data\ImagekitTransformedImageModel;
+use SpaceCatNinja\ImagekitTransformer\Settings;
+use SpaceCatNinja\ImagekitTransformer\Support\ImagekitHelpers;
+use SpaceCatNinja\ImagerX\Exceptions\ImagerException;
+use SpaceCatNinja\ImagerX\Services\ImagerService;
+use SpaceCatNinja\ImagerX\Transformers\TransformerInterface;
 
-use spacecatninja\imagerx\models\ConfigModel;
-use spacecatninja\imagerx\services\ImagerService;
-use spacecatninja\imagerx\transformers\TransformerInterface;
-use spacecatninja\imagerx\exceptions\ImagerException;
-
-class Imagekit extends Component implements TransformerInterface
+class Imagekit implements TransformerInterface
 {
 
     public function transform(Asset|string $image, array $transforms): ?array
@@ -38,24 +33,19 @@ class Imagekit extends Component implements TransformerInterface
     }
 
     /**
-     * @throws \spacecatninja\imagerx\exceptions\ImagerException
+     * @throws ImagerException
      */
     private function getTransformedImage(Asset|string $image, array $transform): ?ImagekitTransformedImageModel
     {
         $config = ImagerService::getConfig();
-        /** @var Settings $settings */
-        $settings = ImagekitTransformer::$plugin->getSettings();
-        
-        if ($settings === null) {
-            return null;
-        }
-        
+        $settings = app(Settings::class);
+
         $profileName = $config->transformerConfig['profile'] ?? $settings->defaultProfile;
         $profile = ImagekitHelpers::getProfile($profileName);
         
         if (!$profile) {
             $msg = 'ImageKit profile “' . $profileName . '” does not exist.';
-            Craft::error($msg, __METHOD__);
+            Log::error($msg);
             throw new ImagerException($msg);
         }
 
@@ -191,9 +181,8 @@ class Imagekit extends Component implements TransformerInterface
      *
      * @return string
      */
-    private function getQualityFromExtension(string $ext, array $transform = null): string
+    private function getQualityFromExtension(string $ext, ?array $transform = null): string
     {
-        /** @var ConfigModel $settings */
         $config = ImagerService::getConfig();
 
         switch ($ext) {

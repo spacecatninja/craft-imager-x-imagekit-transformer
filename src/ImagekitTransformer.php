@@ -4,69 +4,47 @@
  * ImageKit transformer for Imager X
  *
  * @link      https://www.spacecat.ninja
- * @copyright Copyright (c) 2023 André Elvan
+ * @copyright Copyright (c) 2026 André Elvan
  */
 
 namespace SpaceCatNinja\ImagekitTransformer;
 
-use craft\base\Model;
-use craft\base\Plugin;
-
-use craft\events\ReplaceAssetEvent;
-use craft\services\Assets;
-use SpaceCatNinja\ImagekitTransformer\Support\ImagekitHelpers;
-use SpaceCatNinja\ImagekitTransformer\Settings;
+use CraftCms\Cms\Asset\Events\AssetReplaced;
+use CraftCms\Cms\Plugin\Plugin;
+use CraftCms\Cms\Plugin\PluginSettings;
+use Illuminate\Support\Facades\Event;
+use SpaceCatNinja\ImagekitTransformer\Listeners\PurgeFromImagekit;
 use SpaceCatNinja\ImagekitTransformer\Transformers\Imagekit;
-use yii\base\Event;
+use SpaceCatNinja\ImagerX\Transformers\Transformers;
 
 class ImagekitTransformer extends Plugin
 {
-    // Static Properties
-    // =========================================================================
-
-    /**
-     * @var ImagekitTransformer
-     */
-    public static $plugin;
-
     // Public Methods
     // =========================================================================
 
-    public function init(): void
+    public function register(): void
     {
-        parent::init();
+        parent::register();
 
-        self::$plugin = $this;
+        $this->app->singleton(Settings::class, fn() => $this->getSettings());
+    }
 
-        // Register services
-        $this->setComponents([
-
-        ]);
-
-        // Register transformer with Imager
-        Event::on(\spacecatninja\imagerx\ImagerX::class,
-            \spacecatninja\imagerx\ImagerX::EVENT_REGISTER_TRANSFORMERS,
-            static function(\spacecatninja\imagerx\events\RegisterTransformersEvent $event) {
-                $event->transformers['imagekit'] = Imagekit::class;
-            }
-        );
+    public function boot(Transformers $transformers): void
+    {
+        // Register transformer with Imager X
+        $transformers->register('imagekit', Imagekit::class);
 
         // Event listener for clearing caches when an asset is replaced
-        if (self::getInstance()->getSettings()->purgeEnabled === true) {
-            Event::on(Assets::class, Assets::EVENT_AFTER_REPLACE_ASSET,
-                static function(ReplaceAssetEvent $event) {
-                    ImagekitHelpers::purgeAsset($event->asset);
-                }
-            );
+        if (app(Settings::class)->purgeEnabled === true) {
+            Event::listen(AssetReplaced::class, [PurgeFromImagekit::class, 'handleAssetReplaced']);
         }
     }
 
-    /**
-     * @inheritdoc
-     */
-    protected function createSettingsModel(): ?Model
+    // Protected Methods
+    // =========================================================================
+
+    protected static function createSettings(): ?PluginSettings
     {
         return new Settings();
     }
-
 }

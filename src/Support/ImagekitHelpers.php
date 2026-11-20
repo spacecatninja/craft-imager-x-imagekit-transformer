@@ -3,36 +3,42 @@
  * ImageKit transformer for Imager X
  *
  * @link      https://www.spacecat.ninja
- * @copyright Copyright (c) 2023 André Elvan
+ * @copyright Copyright (c) 2026 André Elvan
  */
 
 namespace SpaceCatNinja\ImagekitTransformer\Support;
 
-use craft\elements\Asset;
-use craft\fs\Local;
-use craft\helpers\App;
-use craft\helpers\FileHelper;
-use craft\helpers\UrlHelper;
-use SpaceCatNinja\ImagekitTransformer\ImagekitTransformer;
+use CraftCms\Cms\Asset\Elements\Asset;
+use CraftCms\Cms\Support\File;
+use CraftCms\Cms\Support\Url;
+use Illuminate\Filesystem\LocalFilesystemAdapter;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use SpaceCatNinja\ImagekitTransformer\Data\ImagekitProfile;
 use SpaceCatNinja\ImagekitTransformer\Settings;
-use spacecatninja\imagerx\exceptions\ImagerException;
-use yii\base\InvalidConfigException;
+use SpaceCatNinja\ImagerX\Exceptions\ImagerException;
 
 class ImagekitHelpers
 {
+    /**
+     * @var string
+     */
+    public const PURGE_ENDPOINT = 'https://api.imagekit.io/v1/files/purge';
 
     public static function getProfile(string $name): ?ImagekitProfile
     {
-        $settings = ImagekitTransformer::$plugin->getSettings();
+        $settings = app(Settings::class);
 
-        if ($settings && isset($settings->profiles[$name])) {
+        if (isset($settings->profiles[$name])) {
             return new ImagekitProfile($settings->profiles[$name]);
         }
 
         return null;
     }
 
+    /**
+     * @throws ImagerException
+     */
     public static function getFilePath(Asset|string $image, ImagekitProfile $profile, Settings $config): string
     {
         if (\is_string($image)) { // if $image is a string, just pass it to builder, we have to assume the user knows what he's doing (sry) :)
@@ -42,19 +48,20 @@ class ImagekitHelpers
         if ($profile->isWebProxy) {
             $url = $image->getUrl() ?? '';
 
-            return $config->stripUrlQueryString ? UrlHelper::stripQueryString($url) : $url;
+            return $config->stripUrlQueryString ? Url::stripQueryString($url) : $url;
         }
 
         try {
             $volume = $image->getVolume();
-            $fs = $volume->getFs();
-        } catch (InvalidConfigException $invalidConfigException) {
-            \Craft::error($invalidConfigException->getMessage(), __METHOD__);
-            throw new ImagerException($invalidConfigException->getMessage(), $invalidConfigException->getCode(), $invalidConfigException);
+            $disk = $volume->sourceDisk();
+        } catch (\Throwable $throwable) {
+            Log::error($throwable->getMessage());
+            throw new ImagerException($throwable->getMessage(), $throwable->getCode(), $throwable);
         }
 
-        if ($profile->useCloudSourcePath && property_exists($fs, 'subfolder') && $fs::class !== Local::class) {
-            $path = implode('/', [App::parseEnv($fs->subfolder), App::parseEnv($volume->getSubpath()), $image->getPath()]);
+        if ($profile->useCloudSourcePath && !$disk instanceof LocalFilesystemAdapter) {
+            // The path in the bucket: the disk's root, the volume's subpath, then the asset's path in the volume
+            $path = $disk->path($image->getPath());
         } else {
             $path = $image->getPath();
         }
@@ -69,60 +76,69 @@ class ImagekitHelpers
             }
         }
 
-        $path = FileHelper::normalizePath($path);
-
-        //always use forward slashes for imgix
-        $path = str_replace('\\', '/', $path);
-
-        return $path;
+        // Always use forward slashes for ImageKit
+        return File::normalizePath($path, '/');
     }
 
+    /**
+     * Purges an asset from ImageKit's cache, for every profile that isn't a web proxy.
+     *
+     * @see https://docs.imagekit.io/api-reference/media-api/purge-cache
+     */
     public static function purgeAsset(Asset $asset): void
     {
-        /** @var Settings $settings */
-        $settings = ImagekitTransformer::getInstance()?->getSettings();
+        $settings = app(Settings::class);
 
-        if (!$settings) {
+        if (empty($settings->publicKey) || empty($settings->privateKey)) {
             return;
         }
 
-        $publicKey = $settings->publicKey;
-        $privateKey = $settings->privateKey;
-
-        if (empty($publicKey) || empty($privateKey)) {
-            return;
-        }
-
-        $profiles = $settings->profiles;
-
-        foreach ($profiles as $profile) {
+        foreach ($settings->profiles as $profile) {
             $profileModel = new ImagekitProfile($profile);
 
             if ($profileModel->isWebProxy) {
                 continue;
             }
 
-            $imageKit = new \ImageKit\ImageKit(
-                $settings->publicKey,
-                $settings->privateKey,
-                $profileModel->urlEndpoint
-            );
-
             try {
                 $path = self::getFilePath($asset, $profileModel, $settings);
             } catch (ImagerException $imagerException) {
-                \Craft::error('An error occured when trying to get file path to purge: '.$imagerException->getMessage(), __METHOD__);
+                Log::error('An error occurred when trying to get file path to purge: ' . $imagerException->getMessage());
                 continue;
             }
 
-            $response = $imageKit->purgeCache(rtrim($profileModel->urlEndpoint, '/').'/'.$path);
+            self::purgeUrl(rtrim($profileModel->urlEndpoint, '/') . '/' . $path, $settings->privateKey);
+        }
+    }
 
-            if ($response && $response->error && $response->error->message) {
-                \Craft::error('An error occured when trying to purge asset for ImageKit: '.print_r([
-                        'path' => $path,
-                        'response' => $response
-                    ], true), __METHOD__);
+    /**
+     * Purges a URL from ImageKit's cache. Errors are logged, not thrown.
+     */
+    public static function purgeUrl(string $url, string $privateKey): void
+    {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            Log::error('An error occurred when trying to purge asset for ImageKit, the URL "' . $url . '" is not valid.');
+
+            return;
+        }
+
+        try {
+            $response = Http::withBasicAuth($privateKey, '')
+                ->timeout(30)
+                ->post(self::PURGE_ENDPOINT, ['url' => $url]);
+
+            if ($response->status() < 200 || $response->status() > 300) {
+                Log::error('An error occurred when trying to purge asset for ImageKit: ' . print_r([
+                    'url' => $url,
+                    'status' => $response->status(),
+                    'response' => $response->body(),
+                ], true));
             }
+        } catch (\Throwable $throwable) {
+            Log::error('An error occurred when trying to purge asset for ImageKit: ' . print_r([
+                'url' => $url,
+                'error' => $throwable->getMessage(),
+            ], true));
         }
     }
 }
