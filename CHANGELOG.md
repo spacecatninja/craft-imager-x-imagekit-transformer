@@ -6,6 +6,7 @@
 - Fixed a division by zero error when transforming an image whose size couldn't be read, like an external URL with `getExternalImageDimensions` off, with only a `width` or `height`.
 - Fixed `allowUpscale` being ignored when it was set in a transform instead of in the config, and for modes `crop` and `stretch`, which ImageKit always enlarges. The size of assets is now clamped to the source, like Imager does.
 - Fixed the size of images transformed with mode `fit` when they're enlarged, and with only a `width` or `height` when they're not, and with mode `croponly` when they're larger than the source.
+- Fixed the README example for overriding the profile, which passed `profile` in `transformerParams`. That sent a `profile` transformation to ImageKit instead of changing profile. Use `transformerConfig`.
 
 ## 2.0.2 - 2026-11-20
 

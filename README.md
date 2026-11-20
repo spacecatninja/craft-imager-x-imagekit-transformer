@@ -37,6 +37,10 @@ All the basic transform parameters are supported, with the following exceptions:
 - Focal points are translated to focus anchor points (ie `top`, `left`, `center`, etc).  
 – Watermarks are not translated automatically from Imager syntax to ImageKit's, but you can still add watermarks by manually passing them through the `transformerParams` object (see below).   
 - No effects are currently converted automatically.    
+- ImageKit always enlarges images in its `maintain_ratio` and `force` crop strategies, which the `crop` and `stretch`
+  modes use. When `allowUpscale` is off, the transformer clamps the size of assets to the source instead: crops keep
+  their aspect ratio, and `stretch` clamps each side on its own, like Imager does. Images transformed from a path or
+  URL aren't clamped.
 
 To pass additional options directly to ImageKit, you can use the `transformerParams` transform parameter and pass them in using an `options` object. Example:
 
@@ -142,12 +146,13 @@ should be the volume handle, and the value the path to add.
 
 ### defaultProfile [string]
 Default: `''`  
-Sets the default profile to use (see `profiles`). You can override profile at the transform level by setting it through the `transformParams` transform parameter. Example:
+Sets the default profile to use (see `profiles`). You can override the profile at the template level by setting it through `transformerConfig`. Example:
 
 ```
 {% set transforms = craft.imagerx.transformImage(asset, 
     [{width: 800}, {width: 2000}], 
-    { transformerParams: { profile: 'myotherprofile' } }
+    null,
+    { transformerConfig: { profile: 'myotherprofile' } }
 ) %}
 ```
 
